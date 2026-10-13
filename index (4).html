@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Campus Fit Check - Low-fi Prototype</title>
+<style>
+*{box-sizing:border-box}body{font-family:Arial,"Microsoft JhengHei","PingFang TC",sans-serif;background:#e9ecef;margin:0;display:flex;justify-content:center;padding:16px;color:#222}
+.wrap{width:100%;max-width:380px}
+.lang{text-align:right;margin-bottom:6px}.lang button{margin:0;padding:4px 10px;font-size:12px}
+.phone{background:#fff;border:3px solid #333;border-radius:22px;min-height:620px;padding:16px}
+h1{font-size:18px;margin:0 0 4px}h2{font-size:15px;margin:14px 0 6px}
+.step{font-size:11px;color:#777;margin-bottom:8px}
+label{display:block;font-size:13px;margin:8px 0 3px}
+input,select{width:100%;padding:9px;border:1.5px solid #555;border-radius:6px;font-size:14px}
+button{cursor:pointer;font-size:14px;border:2px solid #333;background:#fff;border-radius:8px;padding:10px;margin-top:8px}
+button.p{background:#333;color:#fff;width:100%}button.w{width:100%}
+.card{border:2px solid #333;border-radius:8px;padding:10px;margin:8px 0;background:#f8f9fa;font-size:13px}
+.tabs{display:flex;gap:6px}.tabs button{flex:1;margin:0}.tabs .on{background:#333;color:#fff}
+.item{display:flex;justify-content:space-between;align-items:center;border:1.5px solid #555;border-radius:8px;padding:9px;margin:6px 0;cursor:pointer;font-size:13px}
+.chip{font-size:11px;padding:2px 8px;border-radius:10px;color:#fff;white-space:nowrap}
+.fit{background:#2e7d32}.partial{background:#ef9a00}.nofit{background:#c62828}.none{background:#888}
+.badge{font-size:28px;font-weight:bold;text-align:center;padding:14px;border-radius:10px;color:#fff;margin:8px 0}
+.bar{height:14px;background:#ddd;border-radius:7px;overflow:hidden;margin:3px 0 8px}.bar div{height:100%;background:#333}
+.tag{display:inline-block;font-size:11px;border:1.5px solid #333;border-radius:4px;padding:1px 6px;font-weight:bold}
+.row{display:flex;gap:6px}.row button{flex:1}.small{font-size:11px;color:#666}
+.nav{display:flex;justify-content:space-between;margin-top:14px;font-size:12px}.nav a{color:#06c;cursor:pointer}
+.sel{background:#333;color:#fff}.dots{text-align:center;font-size:11px;color:#777;margin-top:8px}
+</style></head><body><div class="wrap"><div class="lang"><button onclick="setL('en')">English</button> <button onclick="setL('zh')">繁體中文</button></div><div class="phone" id="app"></div>
+<div class="dots" id="foot"></div></div>
+<script>
+const D={
+foot:["Low-fidelity prototype. All numbers are dummy values, not medical advice.","低保真原型。所有數字均為示範數值，並非醫療建議。"],
+s1:["S1 Set daily target (one time)","S1 設定每日目標（只需一次）"],t1:["Your daily target","你的每日目標"],
+priv:["Enter your body details. Data stays on your phone.","輸入你的身體資料。資料只留在你的手機上。"],
+sex:["Sex","性別"],M:["Male","男"],F:["Female","女"],age:["Age","年齡"],h:["Height cm","身高 cm"],w:["Weight kg","體重 kg"],
+train:["Training","訓練量"],a1:["Light (1-3 days)","輕度（每週 1-3 天）"],a2:["Moderate (3-5 days)","中度（每週 3-5 天）"],a3:["High (6-7 days)","高度（每週 6-7 天）"],
+goal:["Goal","目標"],cut:["Cut","減脂"],maintain:["Maintain","維持"],build:["Build","增肌"],
+calc:["Calculate","計算"],range:["Your daily range","你的每日範圍"],prot:["Protein","蛋白質"],
+gen:["General estimate, not medical advice. You can edit it.","這只是一般估算，並非醫療建議。你可以自行修改。"],
+ek:["Edit kcal","修改千卡"],pmin:["Protein min g","蛋白質下限 g"],pmax:["Protein max g","蛋白質上限 g"],
+save:["Save and continue","儲存並繼續"],
+s2:["S2 Choose item or add photo","S2 選擇食品或加入相片"],t2:["What are you eating?","你想吃什麼？"],
+fixed:["Fixed items","固定食品"],meal:["Meals (photo)","餐盒（相片）"],
+tp:["Take photo","拍照"],up:["Upload photo","上載相片"],
+mock:["Prototype: a photo picks a random meal (mock AI). Or choose manually:","原型：相片會隨機選一個餐盒（模擬 AI）。你也可以手動選擇：" ],
+aiest:["AI estimate","AI 估算"],fv:["Fixed value","固定數值"],
+FIT:["FIT","符合"],PARTIAL:["PARTIAL FIT","部分符合"],NOFIT:["NO FIT","不符合"],
+s3:["S3 Fit result","S3 符合結果"],mt:["meal target","本餐目標"],mb:["meal budget","本餐預算"],kc:["Calories","熱量"],
+short:["Shortfall: about {x} g protein for this meal.","缺口：這一餐約欠 {x} g 蛋白質。"],ok:["Meets this meal's protein share.","達到這一餐的蛋白質份額。"],
+det:["See details and adjust","查看詳情並調整"],add:["Add to today","加入今日"],
+s4:["S4 Details and adjust","S4 詳情與調整"],srcl:["Source","來源"],
+srcf:["stored label value (dummy)","儲存的標籤數值（示範）"],srca:["AI photo estimate (dummy), range shown","AI 相片估算（示範），顯示範圍"],
+por:["Portion","份量"],Small:["Small","小"],Regular:["Regular","中"],Large:["Large","大"],
+rep:["Report a mismatch","回報不符"],repm:["Thanks. Mismatch reported (prototype only).","多謝，已回報不符（只是原型）。"],
+s5:["S5 Add to today","S5 加入今日"],t5:["Today","今日"],eaten:["Eaten","已攝取"],g:["g protein","g 蛋白質"],
+pl:["Protein left (to mid-range {m} g)","剩餘蛋白質（以中間值 {m} g 計）"],cl:["Calories left","剩餘熱量"],
+logged:["Logged","已記錄"],none:["Nothing yet.","暫時沒有記錄。"],another:["Check another item","檢查另一項食品"],reset:["Reset today","重設今日"],
+back:["← Back","← 返回"],next:["Next →","下一步 →"],scr:["Screen {a} of 5","第 {a} / 5 頁"]
+};
+const ITEMS={"Whole-wheat bread (2 slices)":"全麥麵包（2 片）","Packaged chicken sandwich":"包裝雞肉三文治","Soy milk (250 ml)":"豆漿（250 ml）","Protein drink":"蛋白質飲品",
+"Chicken breast rice box":"雞胸飯盒","Roast meat rice":"燒味飯","Miso beef rice":"味噌牛肉飯","Vegetable rice box":"蔬菜飯盒"};
+let L="en";const t=(k,o)=>{let s=D[k][L=="en"?0:1];if(o)for(const x in o)s=s.replace("{"+x+"}",o[x]);return s};
+const nm=n=>L=="en"?n:(ITEMS[n]||n);
+function setL(l){L=l;document.documentElement.lang=l=="en"?"en":"zh-Hant";draw()}
+const FIXED=[{n:"Whole-wheat bread (2 slices)",p:8,c:180},{n:"Packaged chicken sandwich",p:15,c:290},{n:"Soy milk (250 ml)",p:8,c:130},{n:"Protein drink",p:20,c:150}];
+const MEAL=[{n:"Chicken breast rice box",p:35,c:520},{n:"Roast meat rice",p:22,c:780},{n:"Miso beef rice",p:28,c:680},{n:"Vegetable rice box",p:9,c:450}];
+const PORT={Small:0.8,Regular:1,Large:1.3};
+let S={screen:1,tab:"fixed",target:null,item:null,port:"Regular",today:{p:0,c:0,list:[]},form:{sex:"M",age:21,h:175,w:70,act:1.55,goal:"cut"}};
+const $=document.getElementById("app");
+function calc(f){let bmr=10*f.w+6.25*f.h-5*f.age+(f.sex=="M"?5:-161);let tdee=bmr*f.act;
+ let adj={cut:-400,maintain:0,build:300}[f.goal];let kcal=Math.round((tdee+adj)/10)*10;
+ let r={cut:[1.6,2.2],build:[1.6,2.2],maintain:[1.2,2.0]}[f.goal];
+ return{kcal,pmin:Math.round(f.w*r[0]),pmax:Math.round(f.w*r[1])}}
+function est(it){let k=PORT[S.port];let p=it.p*k,c=it.c*k;
+ if(it.fixed)return{p:[Math.round(p),Math.round(p)],c:[Math.round(c),Math.round(c)],label:t("fv")};
+ return{p:[Math.round(p*.8),Math.round(p*1.2)],c:[Math.round(c*.85),Math.round(c*1.15)],label:t("aiest")}}
+function verdict(it){let e=est(it),tg=S.target;let pm=(tg.pmin+tg.pmax)/2/3;let cm=tg.kcal/3;
+ let pAvg=(e.p[0]+e.p[1])/2,cAvg=(e.c[0]+e.c[1])/2;let r=pAvg/pm,v=r>=.9?"fit":r>=.6?"partial":"nofit";
+ if(cAvg>cm*1.25&&v=="fit")v="partial";
+ return{v,pm:Math.round(pm),cm:Math.round(cm),short:Math.max(0,Math.round(pm-pAvg)),e,pAvg,cAvg}}
+const VT=v=>t({fit:"FIT",partial:"PARTIAL",nofit:"NOFIT"}[v]);
+const rg=a=>a[0]==a[1]?a[0]:a[0]+"-"+a[1];
+function nav(b,n){return`<div class="nav"><a onclick="go(${b})">${b?t("back"):""}</a><span class="small">${t("scr",{a:S.screen})}</span><a onclick="go(${n})">${n?t("next"):""}</a></div>`}
+function go(n){S.screen=n;draw()}
+function draw(){let h="";document.getElementById("foot").textContent=t("foot");
+if(S.screen==1){let f=S.form;
+h=`<div class="step">${t("s1")}</div><h1>${t("t1")}</h1><div class="small">${t("priv")}</div>
+<label>${t("sex")}</label><select onchange="S.form.sex=this.value"><option value="M" ${f.sex=="M"?"selected":""}>${t("M")}</option><option value="F" ${f.sex=="F"?"selected":""}>${t("F")}</option></select>
+<div class="row"><div><label>${t("age")}</label><input type="number" value="${f.age}" onchange="S.form.age=+this.value"></div><div><label>${t("h")}</label><input type="number" value="${f.h}" onchange="S.form.h=+this.value"></div><div><label>${t("w")}</label><input type="number" value="${f.w}" onchange="S.form.w=+this.value"></div></div>
+<label>${t("train")}</label><select onchange="S.form.act=+this.value">${[["1.375","a1"],["1.55","a2"],["1.725","a3"]].map(([k,v])=>`<option value="${k}" ${f.act==k?"selected":""}>${t(v)}</option>`).join("")}</select>
+<label>${t("goal")}</label><select onchange="S.form.goal=this.value">${["cut","maintain","build"].map(g=>`<option value="${g}" ${f.goal==g?"selected":""}>${t(g)}</option>`).join("")}</select>
+<button class="w" onclick="S.target=calc(S.form);draw()">${t("calc")}</button>
+${S.target?`<div class="card"><b>${t("range")}</b><br>${S.target.kcal} kcal<br>${t("prot")} ${S.target.pmin}-${S.target.pmax} g<div class="small">${t("gen")}</div>
+<label>${t("ek")}</label><input type="number" value="${S.target.kcal}" onchange="S.target.kcal=+this.value">
+<div class="row"><div><label>${t("pmin")}</label><input type="number" value="${S.target.pmin}" onchange="S.target.pmin=+this.value"></div><div><label>${t("pmax")}</label><input type="number" value="${S.target.pmax}" onchange="S.target.pmax=+this.value"></div></div></div>
+<button class="p" onclick="go(2)">${t("save")}</button>`:""}`;}
+else if(S.screen==2){if(!S.target)S.target=calc(S.form);let tb=S.tab;
+h=`<div class="step">${t("s2")}</div><h1>${t("t2")}</h1>
+<div class="tabs"><button class="${tb=="fixed"?"on":""}" onclick="S.tab='fixed';draw()">${t("fixed")}</button><button class="${tb=="meal"?"on":""}" onclick="S.tab='meal';draw()">${t("meal")}</button></div>`;
+if(tb=="fixed")h+=FIXED.map((x,i)=>{S.port="Regular";let v=verdict({...x,fixed:1}).v;return`<div class="item" onclick="pick(${i},1)"><span>${nm(x.n)}<br><span class="small">${x.p} ${t("g")}, ${x.c} kcal</span></span><span class="chip ${v}">${VT(v)}</span></div>`}).join("");
+else h+=`<div class="row"><button onclick="photo()">${t("tp")}</button><button onclick="photo()">${t("up")}</button></div><div class="small">${t("mock")}</div>`+MEAL.map((x,i)=>`<div class="item" onclick="pick(${i},0)"><span>${nm(x.n)}<br><span class="small">${t("aiest")}</span></span><span class="chip none">?</span></div>`).join("");
+h+=nav(1,0);}
+else if(S.screen==3){let it=S.item,r=verdict(it);
+h=`<div class="step">${t("s3")}</div><h1>${nm(it.n)}</h1><span class="tag">${r.e.label}</span>
+<div class="badge ${r.v}">${VT(r.v)}</div>
+<div>${t("prot")}: ${rg(r.e.p)} g (${t("mt")} ~${r.pm} g)</div><div class="bar"><div style="width:${Math.min(100,r.pAvg/r.pm*100)}%"></div></div>
+<div>${t("kc")}: ${rg(r.e.c)} kcal (${t("mb")} ~${r.cm})</div><div class="bar"><div style="width:${Math.min(100,r.cAvg/r.cm*100)}%"></div></div>
+<div class="card">${r.short>0?t("short",{x:r.short}):t("ok")}</div>
+<button class="w" onclick="go(4)">${t("det")}</button><button class="p" onclick="add()">${t("add")}</button>${nav(2,4)}`;}
+else if(S.screen==4){let it=S.item,r=verdict(it);
+h=`<div class="step">${t("s4")}</div><h1>${nm(it.n)}</h1>
+<div class="card"><span class="tag">${r.e.label}</span><br>${t("prot")} ${rg(r.e.p)} g<br>${t("kc")} ${rg(r.e.c)} kcal<br>${t("srcl")}: ${it.fixed?t("srcf"):t("srca")}</div>
+<h2>${t("por")}</h2><div class="row">${Object.keys(PORT).map(k=>`<button class="${S.port==k?"sel":""}" onclick="S.port='${k}';draw()">${t(k)}</button>`).join("")}</div>
+<div class="badge ${r.v}" style="font-size:18px">${VT(r.v)}</div>
+<button class="w" onclick="alert(t('repm'))">${t("rep")}</button><button class="p" onclick="add()">${t("add")}</button>${nav(3,5)}`;}
+else{let tg=S.target,d=S.today,mid=(tg.pmin+tg.pmax)/2;let pr=Math.max(0,Math.round(mid-d.p)),cr=Math.max(0,Math.round(tg.kcal-d.c));
+h=`<div class="step">${t("s5")}</div><h1>${t("t5")}</h1>
+<div class="card">${t("eaten")}: ${Math.round(d.p)} ${t("g")}, ${Math.round(d.c)} kcal</div>
+<div>${t("pl",{m:Math.round(mid)})}: <b>${pr} g</b></div><div class="bar"><div style="width:${Math.min(100,d.p/mid*100)}%"></div></div>
+<div>${t("cl")}: <b>${cr} kcal</b></div><div class="bar"><div style="width:${Math.min(100,d.c/tg.kcal*100)}%"></div></div>
+<h2>${t("logged")}</h2>${d.list.length?d.list.map(x=>`<div class="small">- ${nm(x[0])} (${t(x[1])})</div>`).join(""):`<div class="small">${t("none")}</div>`}
+<button class="p" onclick="go(2)">${t("another")}</button><button class="w" onclick="S.today={p:0,c:0,list:[]};draw()">${t("reset")}</button>${nav(4,0)}`;}
+$.innerHTML=h}
+function pick(i,fx){S.item=fx?{...FIXED[i],fixed:1}:{...MEAL[i]};S.port="Regular";go(3)}
+function photo(){pick(Math.floor(Math.random()*MEAL.length),0)}
+function add(){let r=verdict(S.item);S.today.p+=r.pAvg;S.today.c+=r.cAvg;S.today.list.push([S.item.n,S.port]);go(5)}
+draw();
+</script></body></html>
